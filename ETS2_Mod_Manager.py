@@ -27,12 +27,13 @@ class ETS2Profile:
     local_mods: int
     last_save: datetime
     storage_type: str
+    company_name: str = ""  # Add company name field
 
 class ETS2ModManager:
     def __init__(self):
-        self.base_dir = Path(__file__).parent
-        self.load_order_file = self.base_dir / "load_order.json"
-        self.manifest_file = self.base_dir / "manifest_cache.json"
+        self.base_dir = os.path.dirname(os.path.abspath(__file__))
+        self.load_order_file = os.path.join(self.base_dir, "load_order.json")
+        self.manifest_file = os.path.join(self.base_dir, "manifest_cache.json")
         
         self.mod_list = []
         self.profiles = []
@@ -43,10 +44,27 @@ class ETS2ModManager:
     def load_configuration(self):
         """Load mod configuration"""
         print("📝 Loading mod configuration...")
+        print(f"🔍 Base dir: {self.base_dir}")
+        print(f"🔍 Load order file: {self.load_order_file}")
+        print(f"🔍 File exists: {os.path.exists(self.load_order_file)}")
         
-        if self.load_order_file.exists():
-            with open(self.load_order_file, 'r', encoding='utf-8') as f:
-                self.mod_list = json.load(f)
+        if os.path.exists(self.load_order_file):
+            print("📂 Opening file...")
+            try:
+                with open(self.load_order_file, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    print(f"📄 File size: {len(content)} chars")
+                    print(f"📄 First 50 chars: {repr(content[:50])}")
+                    print(f"📄 Last 50 chars: {repr(content[-50:])}")
+                    
+                # Parse JSON
+                print("🔧 Parsing JSON...")
+                with open(self.load_order_file, 'r', encoding='utf-8') as f:
+                    self.mod_list = json.load(f)
+                    
+            except Exception as e:
+                print(f"❌ Error loading JSON: {e}")
+                raise
         
         print(f"✅ Loaded {len(self.mod_list)} mods")
 
@@ -100,7 +118,46 @@ class ETS2ModManager:
         
         return locations
 
-    def _decode_sii_simple(self, sii_file: str) -> str:
+    def _decode_hex_name(self, hex_name: str) -> str:
+        """Universal hex name decoder for ETS2 profiles"""
+        # Known names first (for faster lookup)
+        known_names = {
+            "3F": "?",
+            "4E656E677565": "Nengue", 
+            "526F63615F757775": "Roca_uwu",
+            "69727569": "irui",
+            "526F647269676F": "Rodrigo",
+            "526F647269676F20": "Rodrigo "
+        }
+        
+        if hex_name in known_names:
+            return known_names[hex_name]
+        
+        # Try to decode any hex string to text
+        try:
+            # Convert hex to bytes and decode
+            if len(hex_name) % 2 == 0 and all(c in '0123456789ABCDEFabcdef' for c in hex_name):
+                bytes_data = bytes.fromhex(hex_name)
+                # Try UTF-8 first
+                try:
+                    decoded = bytes_data.decode('utf-8').strip('\x00')
+                    if decoded and all(ord(c) >= 32 for c in decoded):  # Printable characters
+                        return decoded
+                except:
+                    pass
+                
+                # Try ASCII
+                try:
+                    decoded = bytes_data.decode('ascii').strip('\x00')
+                    if decoded and all(ord(c) >= 32 for c in decoded):
+                        return decoded
+                except:
+                    pass
+        except:
+            pass
+        
+        # If all fails, return the original hex with readable indicator
+        return f"Profile_{hex_name[:8]}"
         """Enhanced SII decoding with better text extraction"""
         try:
             with open(sii_file, 'rb') as f:
@@ -149,35 +206,35 @@ class ETS2ModManager:
                     self.profiles.append(profile)
 
     def _read_profile(self, profile_path: str, storage_type: str) -> Optional[ETS2Profile]:
-        """Read profile data with enhanced details"""
+        """Read profile data with enhanced details and proper name decoding"""
         try:
             folder_name = os.path.basename(profile_path)
-            name = folder_name
-            
-            # Decode hex names
-            hex_names = {
-                "3F": "?",
-                "4E656E677565": "Nengue",
-                "526F63615F757775": "Roca_uwu", 
-                "69727569": "irui",
-                "526F647269676F": "Rodrigo",
-                "526F647269676F20": "Rodrigo "
-            }
-            
-            if folder_name in hex_names:
-                name = hex_names[folder_name]
+            name = self._decode_hex_name(folder_name)  # Use universal decoder
             
             xp = 0
             level = 1
             mod_count = 0
             workshop_mods = 0
             local_mods = 0
+            company_name = ""
             
             # Try to read profile.sii for detailed info
             profile_file = os.path.join(profile_path, "profile.sii")
             if os.path.exists(profile_file):
                 try:
                     content = self._decode_sii_simple(profile_file)
+                    
+                    # Extract company name
+                    company_match = re.search(r'company_name[^:]*:\s*"([^"]*)"', content)
+                    if company_match:
+                        company_name = company_match.group(1).strip()
+                    
+                    # Extract profile name (might be different from folder name)
+                    profile_match = re.search(r'profile_name[^:]*:\s*"([^"]*)"', content)
+                    if profile_match:
+                        profile_name = profile_match.group(1).strip()
+                        if profile_name and profile_name != name:
+                            name = profile_name  # Use profile name from file if available
                     
                     # Extract XP
                     xp_match = re.search(r'experience[^:]*:\s*(\d+)', content)
@@ -229,7 +286,8 @@ class ETS2ModManager:
                     workshop_mods=workshop_mods,
                     local_mods=local_mods,
                     last_save=last_save,
-                    storage_type=storage_type
+                    storage_type=storage_type,
+                    company_name=company_name
                 )
         except:
             pass
@@ -256,6 +314,8 @@ class ETS2ModManager:
         # Display profiles with detailed information
         for i, profile in enumerate(self.profiles, 1):
             print(f"\n{i:2d}. 👤 {profile.name}")
+            if profile.company_name and profile.company_name != profile.name:
+                print(f"    🏢 Company: {profile.company_name}")
             print(f"    📊 Level: {profile.level:3d} | 🏆 XP: {profile.xp:,}")
             print(f"    🎯 Current Mods: {profile.mods:3d} ({profile.workshop_mods} Workshop + {profile.local_mods} Local)")
             print(f"    💾 Storage: {profile.storage_type}")
@@ -307,7 +367,7 @@ class ETS2ModManager:
                 print("❌ Please enter a valid number!")
 
     def install_mods(self) -> bool:
-        """Install mods to selected profile"""
+        """Install mods to selected profile while preserving existing data"""
         if not self.selected_profile:
             print("❌ No profile selected!")
             return False
@@ -323,25 +383,53 @@ class ETS2ModManager:
                 shutil.copy2(profile_file, backup_file)
                 print(f"✅ Created backup: {backup_file}")
             
-            # Create new SII structure
+            # Read existing profile data to preserve it
+            existing_content = ""
             profile_name = self.selected_profile.name
+            company_name = self.selected_profile.company_name or profile_name
+            experience = self.selected_profile.xp
+            money_account = 500000  # Default fallback
+            
+            if os.path.exists(profile_file):
+                try:
+                    existing_content = self._decode_sii_simple(profile_file)
+                    
+                    # Extract existing values to preserve them
+                    money_match = re.search(r'money_account[^:]*:\s*(\d+)', existing_content)
+                    if money_match:
+                        money_account = int(money_match.group(1))
+                    
+                    # Use existing profile name if found
+                    name_match = re.search(r'profile_name[^:]*:\s*"([^"]*)"', existing_content)
+                    if name_match and name_match.group(1).strip():
+                        profile_name = name_match.group(1).strip()
+                    
+                    # Use existing company name if found
+                    company_match = re.search(r'company_name[^:]*:\s*"([^"]*)"', existing_content)
+                    if company_match and company_match.group(1).strip():
+                        company_name = company_match.group(1).strip()
+                        
+                except Exception as e:
+                    print(f"⚠️  Warning: Could not read existing profile data: {e}")
+            
+            # Create enhanced SII structure preserving existing data
             sii_content = f"""SiiNunit
 {{
 
 profile_data : profile.data {{
  profile_name: "{profile_name}"
- company_name: "{profile_name}"
- experience: 1000
- money_account: 500000
+ company_name: "{company_name}"
+ experience: {experience}
+ money_account: {money_account}
  
  active_mods: {len(self.mod_list)}
 """
             
-            # Add all mods
+            # Add all mods from the collection
             for i, mod in enumerate(self.mod_list):
                 sii_content += f' active_mods[{i}]: "{mod}"\n'
             
-            # Close structure
+            # Close structure with additional essential data
             sii_content += """
  user_data[0]: ff_data
 }}
@@ -349,16 +437,24 @@ profile_data : profile.data {{
 }}
 """
             
-            # Write new profile
+            # Write updated profile
             with open(profile_file, 'w', encoding='utf-8') as f:
                 f.write(sii_content)
             
             print(f"🎮 Successfully installed {len(self.mod_list)} mods!")
+            print(f"✅ Preserved profile data: {profile_name} | Company: {company_name}")
             print("ℹ️  ETS2 will handle file encoding when you next run the game")
             return True
             
         except Exception as e:
             print(f"❌ Error installing mods: {e}")
+            # Try to restore backup if it exists
+            if os.path.exists(backup_file):
+                try:
+                    shutil.copy2(backup_file, profile_file)
+                    print("🔄 Restored from backup due to error")
+                except:
+                    pass
             return False
 
     def run(self):
