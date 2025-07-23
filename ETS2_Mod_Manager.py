@@ -211,7 +211,7 @@ class ETS2ModManager:
         return None
 
     def select_profile(self) -> bool:
-        """Select profile for installation"""
+        """Enhanced profile selection with detailed information"""
         if not self.profiles:
             self.scan_profiles()
         
@@ -219,31 +219,66 @@ class ETS2ModManager:
             print("❌ No profiles found!")
             return False
         
-        print("\n" + "="*50)
-        print("SELECT PROFILE FOR MOD INSTALLATION")
-        print("="*50)
+        # Enhanced GUI Header
+        print("\n" + "="*80)
+        print("🎮 ETS2 PROFILE SELECTION - ENHANCED VIEW")
+        print("="*80)
+        print(f"📦 Ready to install {len(self.mod_list)} mods from this collection")
+        print("🔍 Select the profile you want to modify:")
+        print("="*80)
         
+        # Display profiles with detailed information
         for i, profile in enumerate(self.profiles, 1):
-            print(f"{i}. {profile.name}")
-            print(f"   Storage: {profile.storage_type}")
-            print(f"   Path: {profile.path}")
-            print()
+            print(f"\n{i:2d}. 👤 {profile.name}")
+            print(f"    📊 Level: {profile.level:3d} | 🏆 XP: {profile.xp:,}")
+            print(f"    🎯 Current Mods: {profile.mods:3d} ({profile.workshop_mods} Workshop + {profile.local_mods} Local)")
+            print(f"    💾 Storage: {profile.storage_type}")
+            print(f"    📅 Last Activity: {profile.last_save.strftime('%Y-%m-%d %H:%M')}")
+            print(f"    📁 Path: {profile.path}")
+            
+            # Add visual indicators
+            if profile.mods > 50:
+                print("    ⭐ Heavy mod user")
+            elif profile.mods > 20:
+                print("    🔧 Moderate mod user")
+            elif profile.mods > 0:
+                print("    🆕 Light mod user")
+            else:
+                print("    📦 Clean profile")
+        
+        print("\n" + "="*80)
+        print("⚠️  IMPORTANT:")
+        print("   • Your original profile will be backed up as 'profile.sii.backup'")
+        print("   • Close ETS2 completely before proceeding")
+        print("   • The installer will replace your current mod list")
+        print("="*80)
         
         while True:
             try:
-                choice = input(f"Select profile (1-{len(self.profiles)}) or 0 to cancel: ").strip()
+                choice = input(f"\n🎯 Select profile (1-{len(self.profiles)}) or 0 to cancel: ").strip()
                 if choice == "0":
+                    print("\n❌ Installation cancelled by user")
                     return False
                 
                 index = int(choice) - 1
                 if 0 <= index < len(self.profiles):
                     self.selected_profile = self.profiles[index]
-                    print(f"✅ Selected profile: {self.selected_profile.name}")
-                    return True
+                    
+                    # Confirmation with details
+                    print(f"\n✅ Selected Profile: {self.selected_profile.name}")
+                    print(f"   Current setup: {self.selected_profile.mods} mods → Will become: {len(self.mod_list)} mods")
+                    print(f"   Storage type: {self.selected_profile.storage_type}")
+                    
+                    confirm = input(f"\n🚀 Install {len(self.mod_list)} mods to '{self.selected_profile.name}'? (y/n): ").strip().lower()
+                    if confirm == 'y':
+                        return True
+                    else:
+                        print("❌ Installation cancelled")
+                        return False
                 else:
-                    print("❌ Invalid selection!")
+                    print("❌ Invalid selection! Please try again.")
             except ValueError:
-                print("❌ Please enter a number!")
+                print("❌ Please enter a valid number!")
 
     def install_mods(self) -> bool:
         """Install mods to selected profile"""
