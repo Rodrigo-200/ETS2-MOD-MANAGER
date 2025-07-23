@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # ETS2 Mod Manager
 
 � **Universal installer for ETS2 mod collections with auto-update functionality**
@@ -74,3 +75,6 @@ The installer checks GitHub for updates and can automatically download newer ver
 **Created by Rodrigo** - ETS2 Enthusiast  
 **Version:** 1.0.0  
 **Last Updated:** July 23, 2025
+=======
+# ETS2-MOD-MANAGER
+>>>>>>> d196d01df73ff5f0046ca9286bd2717d8f847018
