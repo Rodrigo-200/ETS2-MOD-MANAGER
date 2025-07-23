@@ -14,8 +14,8 @@ echo Version 1.0.0
 echo.
 
 REM GitHub Repository Configuration
-set GITHUB_USER=rodri-ets2
-set GITHUB_REPO=ets2-mod-manager
+set GITHUB_USER=Rodrigo-200
+set GITHUB_REPO=ETS2-MOD-MANAGER
 set GITHUB_API_URL=https://api.github.com/repos/%GITHUB_USER%/%GITHUB_REPO%
 set GITHUB_RAW_URL=https://raw.githubusercontent.com/%GITHUB_USER%/%GITHUB_REPO%/main
 
