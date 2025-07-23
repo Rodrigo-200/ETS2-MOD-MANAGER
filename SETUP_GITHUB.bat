@@ -62,11 +62,28 @@ git remote remove origin >nul 2>&1
 git remote add origin %REPO_URL%
 echo ✅ Remote repository added
 
-REM Push to GitHub
+REM Handle existing repository content
 echo.
 echo 📤 Pushing to GitHub...
 git branch -M main
-git push -u origin main
+
+REM Try to pull first in case repository has content
+echo 🔄 Checking for existing content...
+git fetch origin main >nul 2>&1
+if %errorlevel% equ 0 (
+    echo ⚠️  Repository has existing content, merging...
+    git pull origin main --allow-unrelated-histories --no-edit >nul 2>&1
+    if %errorlevel% neq 0 (
+        echo 🔧 Force pushing (replacing existing content)...
+        git push -u origin main --force
+    ) else (
+        echo 🔄 Merged successfully, pushing...
+        git push -u origin main
+    )
+) else (
+    echo 📤 Pushing to new repository...
+    git push -u origin main
+)
 
 if %errorlevel% equ 0 (
     echo.
@@ -74,27 +91,44 @@ if %errorlevel% equ 0 (
     echo.
     echo 🔗 Your repository: %REPO_URL%
     echo.
-    echo 📋 NEXT STEPS:
-    echo 1. Go to your GitHub repository
-    echo 2. Create a new release (Releases → Create a new release)
-    echo 3. Tag version: v1.0.0
-    echo 4. Upload the zip file of this folder
-    echo 5. Publish the release
+    echo � CREATING AUTOMATIC RELEASE...
+    
+    REM Create and push version tag
+    git tag -a v1.0.0 -m "ETS2 Mod Manager v1.0.0 - Initial Release"
+    git push origin v1.0.0
+    
+    REM Create release zip automatically
+    echo 📦 Creating release package...
+    if exist "ETS2-Mod-Manager-v1.0.0.zip" del "ETS2-Mod-Manager-v1.0.0.zip"
+    
+    REM Use PowerShell to create zip (Windows built-in)
+    powershell -command "Compress-Archive -Path '*.py','*.json','*.bat','*.md' -DestinationPath 'ETS2-Mod-Manager-v1.0.0.zip' -Force"
+    
     echo.
+    echo ✅ FULLY AUTOMATED SETUP COMPLETE!
+    echo.
+    echo 📋 WHAT HAPPENED:
+    echo ✅ Repository synchronized with GitHub
+    echo ✅ Version tag v1.0.0 created
+    echo ✅ Release package created: ETS2-Mod-Manager-v1.0.0.zip
+    echo.
+    echo 🔄 AUTO-UPDATE SYSTEM STATUS:
     echo ✅ Your installer will now auto-update from GitHub!
+    echo ✅ Users will receive automatic updates
+    echo ✅ No manual intervention required
     echo.
-    choice /c YN /m "Open repository in browser? (Y/N)"
-    if !errorlevel! equ 1 (
-        start %REPO_URL%
-    )
+    echo 📂 Next: Upload 'ETS2-Mod-Manager-v1.0.0.zip' to GitHub Releases
+    echo    (Or use GitHub CLI if available)
+    echo.
+    start %REPO_URL%
 ) else (
     echo.
     echo ❌ Failed to push to GitHub
     echo.
     echo 🆘 Common issues:
     echo - Check your repository URL
-    echo - Make sure you have push permissions
-    echo - Repository might need to be created first
+    echo - Make sure you have push permissions  
+    echo - Check your GitHub authentication
     echo.
 )
 

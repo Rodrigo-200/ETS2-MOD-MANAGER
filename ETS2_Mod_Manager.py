@@ -74,6 +74,32 @@ class ETS2ModManager:
         self.profiles.sort(key=lambda p: p.mods, reverse=True)
         print(f"✅ Found {len(self.profiles)} profiles")
 
+    def _find_steam_locations(self):
+        """Find Steam profile locations"""
+        locations = []
+        try:
+            import winreg
+            try:
+                key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\WOW6432Node\Valve\Steam")
+            except FileNotFoundError:
+                key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Valve\Steam")
+            
+            steam_path, _ = winreg.QueryValueEx(key, "InstallPath")
+            winreg.CloseKey(key)
+            
+            userdata_path = os.path.join(steam_path, "userdata")
+            if os.path.exists(userdata_path):
+                for user_id in os.listdir(userdata_path):
+                    user_path = os.path.join(userdata_path, user_id)
+                    if os.path.isdir(user_path) and user_id.isdigit():
+                        ets2_profiles = os.path.join(user_path, "227300", "remote", "profiles")
+                        if os.path.exists(ets2_profiles):
+                            locations.append(ets2_profiles)
+        except:
+            pass
+        
+        return locations
+
     def _decode_sii_simple(self, sii_file: str) -> str:
         """Enhanced SII decoding with better text extraction"""
         try:
@@ -336,28 +362,82 @@ profile_data : profile.data {{
             return False
 
     def run(self):
-        """Run the mod manager"""
-        print("🚛 ETS2 Mod Manager - User Version")
-        print("="*50)
+        """Run the mod manager with enhanced GUI"""
+        # Enhanced Main Header
+        print("\n" + "="*80)
+        print("🚛 ETS2 MOD MANAGER - PROFESSIONAL INSTALLATION SYSTEM")
+        print("="*80)
+        print("🎯 Universal mod installer with profile detection")
+        print("🔧 Automatic backup and safe installation")
+        print("📦 Complete mod collection management")
+        print("="*80)
         
         if not self.mod_list:
-            print("❌ No mods loaded!")
+            print("❌ No mods loaded! Package may be corrupted.")
+            input("\nPress Enter to exit...")
             return
         
-        print(f"📦 Ready to install {len(self.mod_list)} mods")
-        print()
+        # Show package information
+        print(f"\n� PACKAGE INFORMATION:")
+        print(f"   🎮 Total Mods: {len(self.mod_list)}")
         
+        # Try to show some example mods
+        if len(self.mod_list) >= 5:
+            print(f"   🔧 Sample Mods:")
+            for i, mod in enumerate(self.mod_list[:5]):
+                mod_display = mod.split('|')[-1] if '|' in mod else mod
+                if len(mod_display) > 50:
+                    mod_display = mod_display[:47] + "..."
+                print(f"      {i+1}. {mod_display}")
+            if len(self.mod_list) > 5:
+                print(f"      ... and {len(self.mod_list) - 5} more mods")
+        
+        print(f"\n🛡️  SAFETY FEATURES:")
+        print(f"   ✅ Automatic profile backup (.backup)")
+        print(f"   ✅ Profile detection (Steam/OneDrive/Local)")
+        print(f"   ✅ Safe SII file creation")
+        print(f"   ✅ ETS2 compatibility")
+        
+        print("\n" + "="*80)
+        
+        # Profile selection
         if self.select_profile():
-            confirm = input("\nInstall mods? (y/n): ").strip().lower()
-            if confirm == 'y':
+            print("\n" + "="*80)
+            print("🚀 INSTALLATION READY")
+            print("="*80)
+            print(f"📁 Target Profile: {self.selected_profile.name}")
+            print(f"🔢 Mod Count: {self.selected_profile.mods} → {len(self.mod_list)}")
+            print(f"💾 Storage: {self.selected_profile.storage_type}")
+            print(f"🛡️  Backup: profile.sii.backup will be created")
+            print("="*80)
+            
+            final_confirm = input("\n🎯 FINAL CONFIRMATION - Proceed with installation? (y/n): ").strip().lower()
+            if final_confirm == 'y':
+                print("\n🚀 Starting installation...")
+                print("="*40)
+                
                 if self.install_mods():
-                    print("\n✅ Installation completed successfully!")
+                    print("\n" + "="*80)
+                    print("🎉 INSTALLATION COMPLETED SUCCESSFULLY!")
+                    print("="*80)
+                    print(f"✅ {len(self.mod_list)} mods installed to '{self.selected_profile.name}'")
+                    print("✅ Original profile backed up")
+                    print("✅ ETS2 ready to launch")
+                    print("\n🎮 NEXT STEPS:")
+                    print("   1. Launch Euro Truck Simulator 2")
+                    print("   2. Load your profile")
+                    print("   3. Enjoy your new mod collection!")
+                    print("="*80)
                 else:
-                    print("\n❌ Installation failed!")
+                    print("\n❌ INSTALLATION FAILED!")
+                    print("🛡️  Your original profile backup is safe")
             else:
-                print("\n❌ Installation cancelled")
+                print("\n❌ Installation cancelled by user")
+        else:
+            print("\n❌ No profile selected - installation cancelled")
         
-        input("\nPress Enter to exit...")
+        print("\n" + "="*80)
+        input("Press Enter to exit...")
 
 if __name__ == "__main__":
     manager = ETS2ModManager()
