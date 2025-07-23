@@ -1,0 +1,51 @@
+==========================================
+🚛 ETS2 MOD MANAGER - DISTRIBUTION PACKAGE
+==========================================
+
+📦 PACKAGE CONTENTS:
+- INSTALL.bat             → Universal installer (MAIN FILE)
+- ETS2_Mod_Manager.py     → Core installation script
+- load_order.json         → 56 mod collection
+- manifest_cache.json     → Package metadata
+- version.json            → Version control for auto-updates
+- README.md               → Documentation
+- SETUP_GITHUB.bat        → Setup GitHub repository
+- UPDATE_VERSION.bat      → Update version for releases
+- .github/                → GitHub Actions for automation
+- .gitignore              → Git ignore rules
+
+🚀 FOR YOUR FRIENDS (SIMPLE):
+1. Send them this entire folder as a ZIP
+2. They extract and run INSTALL.bat
+3. Universal installer handles everything automatically
+
+📋 FOR YOU (GITHUB SETUP):
+1. Run SETUP_GITHUB.bat to create repository
+2. Create releases on GitHub for updates
+3. Run UPDATE_VERSION.bat when you make changes
+4. Installer will auto-check for updates
+
+✨ FEATURES:
+- Auto-updates from GitHub
+- Automatic Python dependency installation
+- Profile detection (Steam/OneDrive/Local)
+- Safe backup creation
+- Universal Windows compatibility
+- Single installer does everything
+
+🎯 WHAT YOUR FRIENDS GET:
+- 56 carefully selected ETS2 mods
+- Traffic improvements (Jazzycat, ProMods)
+- Vehicle additions (Ford F-MAX, Air Ride)
+- Gameplay enhancements (Double trailers)
+- Automatic installation to their profile
+
+🔄 UPDATE WORKFLOW:
+1. Make changes to mod collection
+2. Run UPDATE_VERSION.bat
+3. Create GitHub release with new ZIP
+4. Users get automatic update notifications
+
+==========================================
+Ready to share! 🎮
+==========================================

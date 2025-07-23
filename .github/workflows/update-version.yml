@@ -1,0 +1,41 @@
+name: Update Version
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Update version.json timestamp
+      run: |
+        # Update the version file with current timestamp
+        python3 << EOF
+        import json
+        from datetime import datetime
+        
+        try:
+            with open('version.json', 'r') as f:
+                version_data = json.load(f)
+        except:
+            version_data = {"version": "1.0.0"}
+            
+        version_data['last_updated'] = datetime.now().isoformat()
+        version_data['release_date'] = datetime.now().strftime('%Y-%m-%d')
+        
+        with open('version.json', 'w') as f:
+            json.dump(version_data, f, indent=2)
+        EOF
+        
+    - name: Commit version update
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add version.json
+        git diff --staged --quiet || git commit -m "Auto-update version timestamp"
+        git push

@@ -1,0 +1,16 @@
+{
+  "version": "1.0.0",
+  "release_date": "2025-07-23",
+  "download_url": "https://github.com/rodri-ets2/ets2-mod-manager/releases/latest/download/ETS2-Mod-Manager.zip",
+  "changelog": [
+    "Initial release",
+    "56 mod collection from Nengue profile",
+    "Automatic dependency management",
+    "Auto-update functionality",
+    "Universal installer"
+  ],
+  "requirements": {
+    "python": "3.7+",
+    "os": "Windows 10+"
+  }
+}
